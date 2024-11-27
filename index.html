@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale="1.0">
+    <title>Bible Quiz App</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(45deg, #6a11cb, #2575fc);
+            font-family: 'Arial', sans-serif;
+            color: #333;
+        }
+
+        .quiz-container, .name-container {
+            margin-top: 50px;
+            animation: fadeIn 2s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: #6a11cb;
+            color: #fff;
+            border-bottom: 0;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .answers label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        #submit, #start-quiz {
+            background: #2575fc;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        #submit:hover, #start-quiz:hover {
+            background: #1a5bb8;
+        }
+
+        #results, #email-status {
+            font-size: 1.5em;
+            margin-top: 20px;
+        }
+
+        .status-card {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container name-container">
+        <div class="card text-center">
+            <div class="card-header">
+                <h1>Welcome to the Bible Quiz</h1>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Please enter your name to start the quiz:</p>
+                <input type="text" id="username" class="form-control mb-3" placeholder="Enter your name">
+                <button id="start-quiz" class="btn btn-primary">Start Quiz</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container quiz-container" style="display: none;">
+        <div class="card text-center">
+            <div class="card-header">
+                <h1>Bible Quiz</h1>
+            </div>
+            <div class="card-body">
+                <p class="card-text" id="greeting"></p>
+                <div id="quiz"></div>
+                <div class="text-center mt-4">
+                    <button id="submit" class="btn btn-primary">Submit</button>
+                </div>
+                <div id="results" class="text-center mt-4"></div>
+                <div id="email-status" class="text-center mt-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container status-card" id="status-card">
+        <div class="card text-center">
+            <div class="card-header" id="status-header"></div>
+            <div class="card-body">
+                <p class="card-text" id="status-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize EmailJS
+        emailjs.init('paKUcjyB1AhndC2A-');
+
+        const quizQuestions = [
+            {
+                question: "What is the first book of the Bible?",
+                answers: {
+                    a: "Genesis",
+                    b: "Exodus",
+                    c: "Leviticus",
+                    d: "Numbers"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "Who built the ark?",
+                answers: {
+                    a: "Abraham",
+                    b: "Noah",
+                    c: "Moses",
+                    d: "David"
+                },
+                correctAnswer: "b"
+            },
+            {
+                question: "Which day did God create the animals?",
+                answers: {
+                    a: "Third day",
+                    b: "Fourth day",
+                    c: "Fifth day",
+                    d: "Sixth day"
+                },
+                correctAnswer: "d"
+            },
+            {
+                question: "Who was thrown into the lion's den?",
+                answers: {
+                    a: "Daniel",
+                    b: "Elijah",
+                    c: "Isaiah",
+                    d: "Jeremiah"
+                },
+                correctAnswer: "a"
+            },
+            {
+                question: "How many disciples did Jesus have?",
+                answers: {
+                    a: "10",
+                    b: "11",
+                    c: "12",
+                    d: "13"
+                },
+                correctAnswer: "c"
+            }
+        ];
+
+        function buildQuiz() {
+            const output = [];
+
+            quizQuestions.forEach((currentQuestion, questionNumber) => {
+                const answers = [];
+
+                for (letter in currentQuestion.answers) {
+                    answers.push(
+                        `<label>
+                            <input type="radio" name="question${questionNumber}" value="${letter}">
+                            ${letter} :
+                            ${currentQuestion.answers[letter]}
+                         </label>`
+                    );
+                }
+
+                output.push(
+                    `<div class="question">${currentQuestion.question}</div>
+                     <div class="answers">${answers.join('')}</div>`
+                );
+            });
+
+            document.getElementById("quiz").innerHTML = output.join('');
+        }
+
+        function showResults() {
+            const answerContainers = document.querySelectorAll('.answers');
+            let numCorrect = 0;
+            const userAnswers = [];
+
+            quizQuestions.forEach((currentQuestion, questionNumber) => {
+                const answerContainer = answerContainers[questionNumber];
+                const selector = `input[name=question${questionNumber}]:checked`;
+                const userAnswer = (answerContainer.querySelector(selector) || {}).value;
+
+                userAnswers.push(userAnswer || "No answer");
+
+                if (userAnswer === currentQuestion.correctAnswer) {
+                    numCorrect++;
+                    answerContainers[questionNumber].style.color = 'lightgreen';
+                } else {
+                    answerContainers[questionNumber].style.color = 'red';
+                }
+            });
+
+            const username = document.getElementById('greeting').textContent.replace("Welcome, ", "").replace("!", "");
+            const resultsMessage = `Name: ${username}\nScore: ${numCorrect} out of ${quizQuestions.length}\n\nAnswers:\n${userAnswers.join('\n')}`;
+
+            document.getElementById('results').innerHTML = `${numCorrect} out of ${quizQuestions.length}`;
+
+            // Send the email
+            emailjs.send('service_2glkjp9', 'template_zzc85tw', {
+                user_name: username,
+                user_score: numCorrect,
+                user_answers: userAnswers.join('\n')
+            }).then(function(response) {
+                document.getElementById('status-header').innerText = "Success!";
+                document.getElementById('status-message').innerText = "Your score has been sent successfully.";
+                document.getElementById('status-card').style.display = 'block';
+            }, function(error) {
+                console.error('EmailJS Error:', error);
+                document.getElementById('status-header').innerText = "Error";
+                document.getElementById('status-message').innerText = "There was an error sending your score. Please try again.";
+                document.getElementById('status-card').style.display = 'block';
+            });
+        }
+
+        document.getElementById('start-quiz').addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            if (username) {
+                document.querySelector('.name-container').style.display = 'none';
+                document.querySelector('.quiz-container').style.display = 'block';
+                document.getElementById('greeting').textContent = `Welcome, ${username}!`;
+                buildQuiz();
+            } else {
+                alert('Please enter your name.');
+            }
+        });
+
+        document.getElementById('submit').addEventListener('click', showResults);
+    </script>
+</body>
+
+</html>
